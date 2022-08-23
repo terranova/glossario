@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 
 # Glossário
 
-O Jurídico descomplicados. Para adicionar um termo, crie um arquivo markdown
+O Jurídico descomplicado. Para adicionar um termo, crie um arquivo markdown
 dentro da pasta `termos/` obedecendo às seguintes regras: a primeira linha deve
 conter somente a palavra em questão, a segunda linha deve estar em branco e a
 partir da terceira linha deve vir o significado.
