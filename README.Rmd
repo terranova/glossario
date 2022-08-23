@@ -13,30 +13,77 @@ knitr::opts_chunk$set(
 
 # Glossário
 
-Termos jurídicos descomplicados. Para adicionar um termo, crie um arquivo
-markdown dentro da pasta `termos/` obedecendo às seguintes regras: a primeira
-linha deve conter somente a palavra, a segunda linha deve estar em branco e a
-partir da terceira linha deve vir o significado do termo.
+O Jurídico descomplicados. Para adicionar um termo, crie um arquivo markdown
+dentro da pasta `termos/` obedecendo às seguintes regras: a primeira linha deve
+conter somente a palavra em questão, a segunda linha deve estar em branco e a
+partir da terceira linha deve vir o significado.
+
+Você também pode criar links internos usando wikilinks. Eles podem aparecer como
+`[[termo]]` ou `[[termo|texto a ser exibido]]`.
 
 <!-- badges: start -->
 <!-- badges: end -->
 
 ```{r, echo = FALSE, results = 'asis'}
-"termos/" |>
+info <- "termos/" |>
   fs::dir_ls(glob = "*.md") |>
   purrr::map(readr::read_lines) |>
   tibble::tibble(text = _) |>
+  dplyr::mutate(file = names(text)) |>
   dplyr::rowwise() |>
   dplyr::mutate(
-    title = text |>
-      magrittr::extract(1) |>
+    file = file |>
+      fs::path_file() |>
+      fs::path_ext_remove() |>
+      stringr::str_replace_all("[_-]", " "),
+    title_clean = text[1] |>
       stringr::str_remove_all("^[# ]+") |>
-      stringr::str_c("## ", ... = _),
+      stringr::str_trim() |>
+      stringr::str_to_lower(),
+    title = title_clean |>
+      stringr::str_c("## ", ... = _) |>
+      stringr::str_to_title(),
     text = text |>
       tail(-2) |>
       c(title, "", ... = _) |>
       stringr::str_c(collapse = "\n")
   ) |>
+  dplyr::ungroup()
+
+locs <- info$text |>
+  stringr::str_locate_all("\\[\\[.*?\\]\\]") |>
+  purrr::map_if(~ nrow(.x) > 0, ~ .x[nrow(.x):1,])
+for (i in seq_along(locs)) {
+
+  # Skip
+  if (nrow(locs[[i]]) == 0) {
+    next
+  }
+
+  matches <- stringr::str_sub(info$text[i], locs[[i]][,1], locs[[i]][,2])
+  for (j in seq_along(matches)) {
+
+    link_and_alias <- matches[j] |>
+      stringr::str_remove_all("[\\[\\]]") |>
+      stringr::str_split("\\|") |>
+      purrr::pluck(1) |>
+      purrr::when(length(.) == 1 ~ c(., .), ~ .)
+
+    link <- stringr::str_to_lower(link_and_alias[1])
+    if (!any(info$title_clean == link)) {
+      link <- info$title_clean[info$file == link]
+    }
+    link <- stringr::str_replace_all(link, " ", "-")
+
+    info$text[i] <- stringr::str_c(
+      stringr::str_sub(info$text[i], end = locs[[i]][j,1] - 1),
+      stringr::str_c("[", link_and_alias[2], "](#", link, ")"),
+      stringr::str_sub(info$text[i], start = locs[[i]][j,2] + 1)
+    )
+  }
+}
+
+info |>
   dplyr::pull(text) |>
   cat(sep = "\n\n")
 ```
