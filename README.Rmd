@@ -1,0 +1,42 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Glossário
+
+Termos jurídicos descomplicados. Para adicionar um termo, crie um arquivo
+markdown dentro da pasta `termos/` obedecendo às seguintes regras: a primeira
+linha deve conter somente a palavra, a segunda linha deve estar em branco e a
+partir da terceira linha deve vir o significado do termo.
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+```{r, echo = FALSE, results = 'asis'}
+"termos/" |>
+  fs::dir_ls(glob = "*.md") |>
+  purrr::map(readr::read_lines) |>
+  tibble::tibble(text = _) |>
+  dplyr::rowwise() |>
+  dplyr::mutate(
+    title = text |>
+      magrittr::extract(1) |>
+      stringr::str_remove_all("^[# ]+") |>
+      stringr::str_c("## ", ... = _),
+    text = text |>
+      tail(-2) |>
+      c(title, "", ... = _) |>
+      stringr::str_c(collapse = "\n")
+  ) |>
+  dplyr::pull(text) |>
+  cat(sep = "\n\n")
+```
